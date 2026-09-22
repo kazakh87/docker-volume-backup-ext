@@ -15,11 +15,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/offen/docker-volume-backup/internal/errwrap"
+
 	"github.com/cosiner/argv"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/offen/docker-volume-backup/internal/errwrap"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -200,13 +201,14 @@ func (s *script) runLabeledCommands(label string) error {
 type lifecyclePhase string
 
 const (
+	lifecyclePhaseCheck   lifecyclePhase = "check"
 	lifecyclePhaseArchive lifecyclePhase = "archive"
 	lifecyclePhaseProcess lifecyclePhase = "process"
 	lifecyclePhaseCopy    lifecyclePhase = "copy"
 	lifecyclePhasePrune   lifecyclePhase = "prune"
 )
 
-func (s *script) withLabeledCommands(step lifecyclePhase, cb func() error) func() error {
+func (s *script) withLabeledCommands(step lifecyclePhase, nopost bool, cb func() error) func() error {
 	if s.cli == nil {
 		return cb
 	}
@@ -215,11 +217,13 @@ func (s *script) withLabeledCommands(step lifecyclePhase, cb func() error) func(
 			err = errwrap.Wrap(err, fmt.Sprintf("error running %s-pre commands", step))
 			return
 		}
-		defer func() {
-			if derr := s.runLabeledCommands(fmt.Sprintf("docker-volume-backup.%s-post", step)); derr != nil {
-				err = errors.Join(err, errwrap.Wrap(derr, fmt.Sprintf("error running %s-post commands", step)))
-			}
-		}()
+		if !nopost {
+			defer func() {
+				if derr := s.runLabeledCommands(fmt.Sprintf("docker-volume-backup.%s-post", step)); derr != nil {
+					err = errors.Join(err, errwrap.Wrap(derr, fmt.Sprintf("error running %s-post commands", step)))
+				}
+			}()
+		}
 		err = cb()
 		return
 	}

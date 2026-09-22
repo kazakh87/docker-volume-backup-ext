@@ -13,8 +13,9 @@ import (
 	"text/template"
 	"time"
 
-	sTypes "github.com/nicholas-fedor/shoutrrr/pkg/types"
 	"github.com/offen/docker-volume-backup/internal/errwrap"
+
+	sTypes "github.com/nicholas-fedor/shoutrrr/pkg/types"
 )
 
 //go:embed notifications.tmpl

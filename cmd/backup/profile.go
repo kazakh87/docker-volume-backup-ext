@@ -3,7 +3,9 @@
 
 package main
 
-import "runtime"
+import (
+	"runtime"
+)
 
 func (c *command) profile() {
 	memStats := runtime.MemStats{}

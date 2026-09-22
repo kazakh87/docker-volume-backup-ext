@@ -12,13 +12,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/offen/docker-volume-backup/internal/errwrap"
+
 	"github.com/docker/cli/cli/command/service/progress"
 	ctr "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/api/types/system"
 	"github.com/docker/docker/client"
-	"github.com/offen/docker-volume-backup/internal/errwrap"
 )
 
 func scaleService(cli *client.Client, serviceID string, replicas uint64) ([]string, error) {

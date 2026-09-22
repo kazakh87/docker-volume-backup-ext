@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math/rand"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/offen/docker-volume-backup/internal/errwrap"
@@ -69,7 +70,18 @@ func runScript(c *Config) (err error) {
 
 	return func() (err error) {
 		scriptErr := func() error {
-			if err := s.withLabeledCommands(lifecyclePhaseArchive, func() (err error) {
+			if err := s.withLabeledCommands(lifecyclePhaseCheck, true, func() error {
+				// check hat keine eigene Funktion, nur der Container Label Command
+				return nil
+			})(); err != nil {
+				// error code 75 on check means no changes, no backup needed
+				if strings.HasSuffix(err.Error(), fmt.Sprintf("running command exited %d", 75)) {
+					s.logger.Info("Check returns exitcode 75, backup is skipped")
+					return nil
+				}
+				return err
+			}
+			if err := s.withLabeledCommands(lifecyclePhaseArchive, false, func() (err error) {
 				restartContainersAndServices, err := s.stopContainersAndServices()
 				// The mechanism for restarting containers is not using hooks as it
 				// should happen as soon as possible (i.e. before uploading backups or
@@ -87,14 +99,13 @@ func runScript(c *Config) (err error) {
 			})(); err != nil {
 				return err
 			}
-
-			if err := s.withLabeledCommands(lifecyclePhaseProcess, s.encryptArchive)(); err != nil {
+			if err := s.withLabeledCommands(lifecyclePhaseProcess, false, s.encryptArchive)(); err != nil {
 				return err
 			}
-			if err := s.withLabeledCommands(lifecyclePhaseCopy, s.copyArchive)(); err != nil {
+			if err := s.withLabeledCommands(lifecyclePhaseCopy, false, s.copyArchive)(); err != nil {
 				return err
 			}
-			if err := s.withLabeledCommands(lifecyclePhasePrune, s.pruneBackups)(); err != nil {
+			if err := s.withLabeledCommands(lifecyclePhasePrune, false, s.pruneBackups)(); err != nil {
 				return err
 			}
 			return nil
