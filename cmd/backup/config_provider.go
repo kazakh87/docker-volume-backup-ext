@@ -10,10 +10,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/offen/docker-volume-backup/internal/envconfig"
 	"github.com/offen/docker-volume-backup/internal/errwrap"
 
+	// ist env wirklich relevant?
 	"github.com/joho/godotenv"
-	"github.com/offen/envconfig"
 	shell "mvdan.cc/sh/v3/shell"
 )
 

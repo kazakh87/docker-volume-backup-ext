@@ -112,52 +112,8 @@ func (s *script) runLabeledCommands(label string) error {
 		return errwrap.Wrap(err, "error querying for containers")
 	}
 
-	var hasDeprecatedContainers bool
-	if label == "docker-volume-backup.archive-pre" {
-		f[0] = filters.KeyValuePair{
-			Key:   "label",
-			Value: "docker-volume-backup.exec-pre",
-		}
-		deprecatedContainers, err := s.cli.ContainerList(context.Background(), container.ListOptions{
-			Filters: filters.NewArgs(f...),
-		})
-		if err != nil {
-			return errwrap.Wrap(err, "error querying for containers")
-		}
-		if len(deprecatedContainers) != 0 {
-			hasDeprecatedContainers = true
-			containersWithCommand = append(containersWithCommand, deprecatedContainers...)
-		}
-	}
-
-	if label == "docker-volume-backup.archive-post" {
-		f[0] = filters.KeyValuePair{
-			Key:   "label",
-			Value: "docker-volume-backup.exec-post",
-		}
-		deprecatedContainers, err := s.cli.ContainerList(context.Background(), container.ListOptions{
-			Filters: filters.NewArgs(f...),
-		})
-		if err != nil {
-			return errwrap.Wrap(err, "error querying for containers")
-		}
-		if len(deprecatedContainers) != 0 {
-			hasDeprecatedContainers = true
-			containersWithCommand = append(containersWithCommand, deprecatedContainers...)
-		}
-	}
-
 	if len(containersWithCommand) == 0 {
 		return nil
-	}
-
-	if hasDeprecatedContainers {
-		s.logger.Warn(
-			"Using `docker-volume-backup.exec-pre` and `docker-volume-backup.exec-post` labels has been deprecated and will be removed in the next major version.",
-		)
-		s.logger.Warn(
-			"Please use other `-pre` and `-post` labels instead. Refer to the README for an upgrade guide.",
-		)
 	}
 
 	g := new(errgroup.Group)
@@ -165,12 +121,7 @@ func (s *script) runLabeledCommands(label string) error {
 	for _, container := range containersWithCommand {
 		c := container
 		g.Go(func() error {
-			cmd, ok := c.Labels[label]
-			if !ok && label == "docker-volume-backup.archive-pre" {
-				cmd = c.Labels["docker-volume-backup.exec-pre"]
-			} else if !ok && label == "docker-volume-backup.archive-post" {
-				cmd = c.Labels["docker-volume-backup.exec-post"]
-			}
+			cmd, _ := c.Labels[label]
 
 			userLabelName := fmt.Sprintf("%s.user", label)
 			user := c.Labels[userLabelName]

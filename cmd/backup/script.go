@@ -17,7 +17,6 @@ import (
 	"github.com/offen/docker-volume-backup/internal/storage/local"
 
 	"github.com/docker/docker/client"
-	"github.com/leekchan/timeutil"
 	"github.com/nicholas-fedor/shoutrrr"
 	"github.com/nicholas-fedor/shoutrrr/pkg/router"
 )
@@ -98,11 +97,14 @@ func (s *script) init() error {
 		s.c.BackupLatestSymlink = os.ExpandEnv(s.c.BackupLatestSymlink)
 		s.c.BackupPruningPrefix = os.ExpandEnv(s.c.BackupPruningPrefix)
 	}
-	s.file = timeutil.Strftime(&s.stats.StartTime, s.file)
+	s.file = Strftime(&s.stats.StartTime, s.file)
 
-	_, err := os.Stat("/var/run/docker.sock")
 	_, dockerHostSet := os.LookupEnv("DOCKER_HOST")
-	if !os.IsNotExist(err) || dockerHostSet {
+	var sockErr error = nil
+	if !dockerHostSet {
+		_, sockErr = os.Stat("/var/run/docker.sock")
+	}
+	if dockerHostSet || !os.IsNotExist(sockErr) {
 		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 		if err != nil {
 			return errwrap.Wrap(err, "failed to create docker client")
@@ -168,7 +170,7 @@ func (s *script) init() error {
 
 		tmpl := template.New("")
 		tmpl.Funcs(templateHelpers)
-		tmpl, err = tmpl.Parse(defaultNotifications)
+		tmpl, err := tmpl.Parse(defaultNotifications)
 		if err != nil {
 			return errwrap.Wrap(err, "unable to parse default notifications templates")
 		}

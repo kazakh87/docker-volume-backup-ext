@@ -8,18 +8,15 @@ package main
 
 import (
 	"archive/tar"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/offen/docker-volume-backup/internal/errwrap"
-
-	"github.com/klauspost/compress/zstd"
-	"github.com/klauspost/pgzip"
 )
 
 func createArchive(files []string, inputFilePath, outputFilePath string, compression string, compressionConcurrency int) error {
@@ -97,26 +94,11 @@ func getCompressionWriter(file *os.File, algo string, concurrency int) (io.Write
 	case "none":
 		return &passThroughWriteCloser{file}, nil
 	case "gz":
-		w, err := pgzip.NewWriterLevel(file, 5)
+		w, err := gzip.NewWriterLevel(file, 5)
 		if err != nil {
 			return nil, errwrap.Wrap(err, "gzip error")
 		}
-
-		if concurrency == 0 {
-			concurrency = runtime.GOMAXPROCS(0)
-		}
-
-		if err := w.SetConcurrency(1<<20, concurrency); err != nil {
-			return nil, errwrap.Wrap(err, "error setting concurrency")
-		}
-
 		return w, nil
-	case "zst":
-		compressWriter, err := zstd.NewWriter(file)
-		if err != nil {
-			return nil, errwrap.Wrap(err, "zstd error")
-		}
-		return compressWriter, nil
 	default:
 		return nil, errwrap.Wrap(nil, fmt.Sprintf("unsupported compression algorithm: %s", algo))
 	}

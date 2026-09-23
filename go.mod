@@ -9,10 +9,8 @@ require (
 	github.com/docker/docker v28.3.3+incompatible
 	github.com/gofrs/flock v0.12.1
 	github.com/joho/godotenv v1.5.1
-	github.com/klauspost/compress v1.18.0
-	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d
+	// comment shoutrrr für Notifikations, fielleicht läst sich das verkleinern
 	github.com/nicholas-fedor/shoutrrr v0.10.3
-	github.com/offen/envconfig v1.5.0
 	github.com/otiai10/copy v1.14.1
 	github.com/robfig/cron/v3 v3.0.1
 	golang.org/x/sync v0.17.0
@@ -67,7 +65,6 @@ require (
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/klauspost/pgzip v1.2.6
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/moby/term v0.0.0-20200312100748-672ec06f55cd // indirect
